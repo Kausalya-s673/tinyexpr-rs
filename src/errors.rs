@@ -16,4 +16,7 @@ pub enum ParseError {
 
     #[error("invalid number")]
     InvalidNumber,
+
+    #[error("wrong number of arguments: expected {expected}, found {found}")]
+    ArityMismatch { expected: usize, found: usize },
 }

@@ -8,3 +8,7 @@ thiserror = "2"
 
 [dev-dependencies]
 criterion = "0.7"
+
+[[bench]]
+name = "tinyexpr_bench"
+harness = false

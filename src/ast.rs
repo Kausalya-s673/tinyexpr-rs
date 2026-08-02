@@ -63,4 +63,11 @@ pub enum Expr {
         function: Builtin,
         args: Vec<Expr>,
     },
+
+    /// The comma operator: `a, b, c`. Every element is evaluated in order
+    /// (so side effects / errors in `a` and `b` still surface), but the
+    /// value of the whole expression is the value of the last element.
+    /// Always holds at least 2 elements — a single expression is never
+    /// wrapped in a `Sequence`.
+    Sequence(Vec<Expr>),
 }

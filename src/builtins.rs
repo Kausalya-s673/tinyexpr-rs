@@ -1,3 +1,5 @@
+use crate::ast::Builtin;
+
 pub fn lookup(name: &str) -> Option<Builtin> {
     match name {
         "abs" => Some(Builtin::Abs),

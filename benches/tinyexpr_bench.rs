@@ -17,7 +17,7 @@
 //!   - variable lookup    — many `Expr::Variable` references against a
 //!                          `HashMap`, isolating lookup/hashing cost
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use std::collections::HashMap;
 use std::hint::black_box;
 use tinyexpr_rs::ast::Expr;
@@ -37,7 +37,10 @@ const FUNCTION_CALLS: &str = "sqrt(2) + sin(1) * cos(1) - atan2(1, 2) + pow(2, 1
 /// depth proportional to `terms` — good for isolating eval stack cost from
 /// parse cost.
 fn deep_chain(terms: usize) -> String {
-    std::iter::repeat("1").take(terms).collect::<Vec<_>>().join("+")
+    std::iter::repeat("1")
+        .take(terms)
+        .collect::<Vec<_>>()
+        .join("+")
 }
 
 /// Deeply nested parens: `(((...(1)...)))`. Every `(` forces

@@ -12,11 +12,11 @@ mod tests {
         assert_eq!(result, 4);
     }
 }
-pub mod errors;
-pub mod lexer;
-pub mod token;
-pub mod parser;
 pub mod ast;
 pub mod builtins;
+pub mod errors;
 pub mod eval;
-pub mod Optimize;
+pub mod lexer;
+pub mod optimize;
+pub mod parser;
+pub mod token;

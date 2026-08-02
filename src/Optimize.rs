@@ -213,10 +213,7 @@ mod tests {
         let result = optimized("bogus, 5");
         assert_eq!(
             result,
-            Expr::Sequence(vec![
-                Expr::Variable("bogus".to_string()),
-                Expr::Number(5.0),
-            ])
+            Expr::Sequence(vec![Expr::Variable("bogus".to_string()), Expr::Number(5.0),])
         );
 
         use crate::errors::ParseError;

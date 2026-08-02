@@ -318,7 +318,10 @@ mod tests {
         let result = bad.eval(&HashMap::new());
         assert!(matches!(
             result,
-            Err(ParseError::ArityMismatch { expected: 2, found: 1 })
+            Err(ParseError::ArityMismatch {
+                expected: 2,
+                found: 1
+            })
         ));
     }
 }

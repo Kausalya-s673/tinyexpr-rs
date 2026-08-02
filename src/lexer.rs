@@ -8,10 +8,7 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
-        Self {
-            input,
-            pos: 0,
-        }
+        Self { input, pos: 0 }
     }
 
     fn peek(&self) -> Option<char> {
@@ -73,9 +70,7 @@ impl<'a> Lexer<'a> {
                 }
             }
 
-            return Ok(Token::Identifier(
-                self.input[start..self.pos].to_string(),
-            ));
+            return Ok(Token::Identifier(self.input[start..self.pos].to_string()));
         }
 
         // Operators

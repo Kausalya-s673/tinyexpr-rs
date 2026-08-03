@@ -126,16 +126,15 @@ src/
 ├── parser.rs
 ├── token.rs
 └── lib.rs
-
+example/
+├── example1.rs
+├── example2.rs
+└── example3.rs
 tests/
 ├── common.rs
 ├── eval.rs
 ├── lexer.rs
 ├── smoke.rs
-├── example1.rs
-├── example2.rs
-└── example3.rs
-
 benches/
 └── tinyexpr_bench.rs
 ```

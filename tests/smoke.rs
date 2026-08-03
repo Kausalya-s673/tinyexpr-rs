@@ -36,6 +36,7 @@
 
 mod common;
 use common::*;
+use tinyexpr_rs::errors::ParseError;
 
 // ---------------------------------------------------------------------
 // test_results
@@ -432,7 +433,7 @@ fn optimize() {
     for &(expr, answer) in cases {
         let optimized = parse_ok(expr).optimize();
         match optimized {
-            tinyexpr::ast::Expr::Number(value) => assert_close(value, answer),
+            tinyexpr_rs::ast::Expr::Number(value)=> assert_close(value, answer),
             other => panic!("{expr:?} should fold to a constant, got {other:?}"),
         }
         // Still agrees with a full (re-parsed, non-optimized) eval.

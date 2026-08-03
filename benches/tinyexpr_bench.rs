@@ -1,29 +1,33 @@
 //! Criterion benchmarks for tinyexpr-rs.
 //!
 //! Run with:
-//!   cargo bench
 //!
-//! Covers five workload shapes, each measured at both the `parse` stage
-//! and the `eval` stage (parse and eval are timed separately so a
-//! regression in one doesn't hide in the other's numbers):
+//! ```bash
+//! cargo bench
+//! ```
 //!
-//!   - simple arithmetic  — a short, flat expression
-//!   - nested expressions — parenthesized, mixed-precedence, moderate depth
-//!   - function calls     — several builtin calls, some nested
-//!   - deep AST           — two shapes: a long flat operator chain (stresses
-//!                          `eval`'s recursive call stack) and deeply nested
-//!                          parens (stresses `parse_base`'s recursive descent
-//!                          stack specifically)
-//!   - variable lookup    — many `Expr::Variable` references against a
-//!                          `HashMap`, isolating lookup/hashing cost
+//! Covers five workload shapes, each measured at both the parsing and
+//! evaluation stages so regressions in one phase don't hide in the other.
+//!
+//! - Simple arithmetic — a short, flat expression.
+//! - Nested expressions — parenthesized, mixed-precedence expressions.
+//! - Function calls — several builtin calls, including nested calls.
+//! - Deep AST — two stress cases:
+//!     - a long flat operator chain (stresses `eval` recursion depth)
+//!     - deeply nested parentheses (stresses parser recursion depth)
+//! - Variable lookup — many `Expr::Variable` references against a
+//!     `HashMap`, isolating lookup/hashing cost.
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use std::collections::HashMap;
 use std::hint::black_box;
+
 use tinyexpr_rs::ast::Expr;
 use tinyexpr_rs::parser;
 
-// ---- fixture expressions ---------------------------------------------------
+// -----------------------------------------------------------------------------
+// Benchmark fixtures
+// -----------------------------------------------------------------------------
 
 const SIMPLE_ARITHMETIC: &str = "2 + 3 * 4 - 1";
 
@@ -31,54 +35,51 @@ const NESTED_EXPRESSIONS: &str = "((2 + 3) * (4 - 1)) / (5 + 2) - ((6 * 2) + (8 
 
 const FUNCTION_CALLS: &str = "sqrt(2) + sin(1) * cos(1) - atan2(1, 2) + pow(2, 10) + ln(e)";
 
-/// A long flat chain of additions: `1+1+1+...+1`. `parse_expr`/`parse_term`
-/// build this iteratively (no parser recursion per term), but the
-/// resulting left-folded `Binary` tree still has `eval`-time recursion
-/// depth proportional to `terms` — good for isolating eval stack cost from
-/// parse cost.
+const DEEP_CHAIN_TERMS: usize = 1_000;
+const DEEP_NESTING_DEPTH: usize = 500;
+const VARIABLE_LOOKUP_REPEATS: usize = 250;
+
+/// Generates a long flat addition chain:
+///
+/// `1+1+1+...+1`
 fn deep_chain(terms: usize) -> String {
-    std::iter::repeat("1")
-        .take(terms)
+    std::iter::repeat_n("1", terms)
         .collect::<Vec<_>>()
         .join("+")
 }
 
-/// Deeply nested parens: `(((...(1)...)))`. Every `(` forces
-/// `parse_base` -> `parse_list` -> ... -> `parse_base` to recurse one
-/// level deeper, so this specifically stresses the *parser's* call stack
-/// rather than eval's.
+/// Generates deeply nested parentheses:
+///
+/// `((((1))))`
 fn deep_nested_parens(depth: usize) -> String {
     let mut s = String::with_capacity(depth * 2 + 1);
-    s.extend(std::iter::repeat('(').take(depth));
+
+    s.extend(std::iter::repeat_n('(', depth));
     s.push('1');
-    s.extend(std::iter::repeat(')').take(depth));
+    s.extend(std::iter::repeat_n(')', depth));
+
     s
 }
 
-const DEEP_CHAIN_TERMS: usize = 1_000;
-const DEEP_NESTING_DEPTH: usize = 500;
-
-/// Many references to a handful of bound variables, forcing repeated
-/// `HashMap` lookups at eval time.
+/// Generates repeated variable expressions.
 fn variable_lookup_expr(repeats: usize) -> String {
-    std::iter::repeat("a + b + c - d")
-        .take(repeats)
+    std::iter::repeat_n("a + b + c - d", repeats)
         .collect::<Vec<_>>()
         .join("+")
 }
 
-const VARIABLE_LOOKUP_REPEATS: usize = 250;
-
 fn sample_vars() -> HashMap<String, f64> {
     let mut vars = HashMap::new();
-    vars.insert("a".to_string(), 1.0);
-    vars.insert("b".to_string(), 2.0);
-    vars.insert("c".to_string(), 3.0);
-    vars.insert("d".to_string(), 4.0);
+    vars.insert("a".into(), 1.0);
+    vars.insert("b".into(), 2.0);
+    vars.insert("c".into(), 3.0);
+    vars.insert("d".into(), 4.0);
     vars
 }
 
-// ---- parse benchmarks -------------------------------------------------------
+// -----------------------------------------------------------------------------
+// Parse benchmarks
+// -----------------------------------------------------------------------------
 
 fn bench_parse(c: &mut Criterion) {
     let mut group = c.benchmark_group("parse");
@@ -96,34 +97,39 @@ fn bench_parse(c: &mut Criterion) {
     });
 
     let deep_chain_src = deep_chain(DEEP_CHAIN_TERMS);
+
     group.bench_function("deep_ast_flat_chain", |b| {
         b.iter(|| parser::parse(black_box(&deep_chain_src)))
     });
 
     let deep_parens_src = deep_nested_parens(DEEP_NESTING_DEPTH);
+
     group.bench_function("deep_ast_nested_parens", |b| {
         b.iter(|| parser::parse(black_box(&deep_parens_src)))
     });
 
-    let var_lookup_src = variable_lookup_expr(VARIABLE_LOOKUP_REPEATS);
+    let variable_src = variable_lookup_expr(VARIABLE_LOOKUP_REPEATS);
+
     group.bench_function("variable_lookup", |b| {
-        b.iter(|| parser::parse(black_box(&var_lookup_src)))
+        b.iter(|| parser::parse(black_box(&variable_src)))
     });
 
     group.finish();
 }
 
-// ---- eval benchmarks ---------------------------------------------------------
+// -----------------------------------------------------------------------------
+// Eval benchmarks
+// -----------------------------------------------------------------------------
 
-/// Parses `src` once up front (outside the timed section) so each
-/// benchmark isolates `eval` cost from `parse` cost.
+/// Parses once outside the benchmark so only evaluation time is measured.
 fn parsed(src: &str) -> Expr {
     parser::parse(src).unwrap_or_else(|e| panic!("failed to parse {src:?}: {e}"))
 }
 
 fn bench_eval(c: &mut Criterion) {
     let mut group = c.benchmark_group("eval");
-    let empty_vars: HashMap<String, f64> = HashMap::new();
+
+    let empty_vars = HashMap::<String, f64>::new();
 
     let simple = parsed(SIMPLE_ARITHMETIC);
     group.bench_function("simple_arithmetic", |b| {
@@ -141,19 +147,22 @@ fn bench_eval(c: &mut Criterion) {
     });
 
     let deep_chain_ast = parsed(&deep_chain(DEEP_CHAIN_TERMS));
+
     group.bench_function("deep_ast_flat_chain", |b| {
         b.iter(|| deep_chain_ast.eval(black_box(&empty_vars)))
     });
 
     let deep_parens_ast = parsed(&deep_nested_parens(DEEP_NESTING_DEPTH));
+
     group.bench_function("deep_ast_nested_parens", |b| {
         b.iter(|| deep_parens_ast.eval(black_box(&empty_vars)))
     });
 
     let vars = sample_vars();
-    let var_lookup_ast = parsed(&variable_lookup_expr(VARIABLE_LOOKUP_REPEATS));
+    let variable_ast = parsed(&variable_lookup_expr(VARIABLE_LOOKUP_REPEATS));
+
     group.bench_function("variable_lookup", |b| {
-        b.iter(|| var_lookup_ast.eval(black_box(&vars)))
+        b.iter(|| variable_ast.eval(black_box(&vars)))
     });
 
     group.finish();

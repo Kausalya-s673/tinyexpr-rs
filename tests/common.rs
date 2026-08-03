@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use tinyexpr_rs::parser;
 use tinyexpr_rs::errors::ParseError;
+use tinyexpr_rs::parser;
 
 /// Parse an expression or panic.
 pub fn parse_ok(expr: &str) -> tinyexpr_rs::ast::Expr {
@@ -15,10 +15,7 @@ pub fn interp(expr: &str) -> Result<f64, ParseError> {
 }
 
 /// Evaluate with variables.
-pub fn interp_with(
-    expr: &str,
-    vars: &HashMap<String, f64>,
-) -> Result<f64, ParseError> {
+pub fn interp_with(expr: &str, vars: &HashMap<String, f64>) -> Result<f64, ParseError> {
     let ast = parser::parse(expr)?;
     ast.eval(vars)
 }
@@ -34,11 +31,6 @@ pub fn assert_close(value: f64, expected: f64) {
 }
 
 /// Build a variable map.
-pub fn vars<const N: usize>(
-    pairs: [(&str, f64); N],
-) -> HashMap<String, f64> {
-    pairs
-        .iter()
-        .map(|(k, v)| ((*k).to_string(), *v))
-        .collect()
+pub fn vars<const N: usize>(pairs: [(&str, f64); N]) -> HashMap<String, f64> {
+    pairs.iter().map(|(k, v)| ((*k).to_string(), *v)).collect()
 }

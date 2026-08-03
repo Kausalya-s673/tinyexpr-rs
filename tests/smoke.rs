@@ -48,9 +48,9 @@ fn results() {
         ("1", 1.0),
         ("1 ", 1.0),
         ("(1)", 1.0),
-        ("pi", 3.14159),
+        ("pi", std::f64::consts::PI),
         ("atan(1)*4 - pi", 0.0),
-        ("e", 2.71828),
+        ("e", std::f64::consts::E),
         ("2+1", 2.0 + 1.0),
         ("(((2+(1))))", 2.0 + 1.0),
         ("3+2", 3.0 + 2.0),
@@ -117,7 +117,7 @@ fn results() {
         ("-(1,(2,3))", -3.0),
         ("2^2", 4.0),
         ("pow(2,2)", 4.0),
-        ("atan2(1,1)", 0.7854),
+        ("atan2(1,1)", std::f64::consts::FRAC_PI_4),
         ("atan2(1,2)", 0.4636),
         ("atan2(2,1)", 1.1071),
         ("atan2(3,4)", 0.6435),
@@ -427,13 +427,13 @@ fn optimize() {
         ("5+5", 10.0),
         ("pow(2,2)", 4.0),
         ("sqrt 100", 10.0),
-        ("pi * 2", 6.2832),
+        ("pi * 2", std::f64::consts::TAU),
     ];
 
     for &(expr, answer) in cases {
         let optimized = parse_ok(expr).optimize();
         match optimized {
-            tinyexpr_rs::ast::Expr::Number(value)=> assert_close(value, answer),
+            tinyexpr_rs::ast::Expr::Number(value) => assert_close(value, answer),
             other => panic!("{expr:?} should fold to a constant, got {other:?}"),
         }
         // Still agrees with a full (re-parsed, non-optimized) eval.
@@ -475,10 +475,7 @@ fn pow_associativity() {
     for &(lhs, rhs) in equivalences {
         let r1 = interp_with(lhs, &v).unwrap_or_else(|e| panic!("{lhs:?} failed: {e}"));
         let r2 = interp_with(rhs, &v).unwrap_or_else(|e| panic!("{rhs:?} failed: {e}"));
-        assert!(
-            (r1 - r2).abs() <= 1e-9,
-            "{lhs:?} ({r1}) != {rhs:?} ({r2})"
-        );
+        assert!((r1 - r2).abs() <= 1e-9, "{lhs:?} ({r1}) != {rhs:?} ({r2})");
     }
 }
 

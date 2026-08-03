@@ -15,9 +15,8 @@
 //! - Deep AST — two stress cases:
 //!     - a long flat operator chain (stresses `eval` recursion depth)
 //!     - deeply nested parentheses (stresses parser recursion depth)
-//! - Variable lookup — many `Expr::Variable` references against a
-//!     `HashMap`, isolating lookup/hashing cost.
-
+//! - variable lookup — many `Expr::Variable` references against a
+//!   `HashMap`, isolating lookup/hashing cost
 use criterion::{Criterion, criterion_group, criterion_main};
 use std::collections::HashMap;
 use std::hint::black_box;

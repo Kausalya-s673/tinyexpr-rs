@@ -10,8 +10,7 @@ use std::collections::HashMap;
 use tinyexpr_rs::parser;
 
 fn main() {
-    let expr = parser::parse("x*x+y*y")
-        .unwrap_or_else(|e| panic!("Parse error: {e:?}"));
+    let expr = parser::parse("x*x+y*y").unwrap_or_else(|e| panic!("Parse error: {e:?}"));
 
     let mut vars = HashMap::new();
 

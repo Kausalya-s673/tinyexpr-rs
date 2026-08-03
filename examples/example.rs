@@ -10,8 +10,7 @@ fn main() {
     let expression = "sqrt(5^2+7^2+11^2+(8-2)^2)";
 
     // Parse the expression into an AST.
-    let ast = parser::parse(expression)
-        .unwrap_or_else(|e| panic!("Parse error: {e}"));
+    let ast = parser::parse(expression).unwrap_or_else(|e| panic!("Parse error: {e}"));
 
     // No variables are needed for this expression.
     let vars = HashMap::new();
